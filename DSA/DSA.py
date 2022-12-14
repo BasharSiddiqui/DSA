@@ -30,6 +30,11 @@ for i in range(0,1):
     with open (F, 'w') as FiLe:
         json.dump(data, FiLe) 
 
-print(lexicon)
-print("YAHALLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
-print(index)
+Lexicon = r'C:\Users\wahaj\source\repos\DSA\DSA\Lexicon.json'
+to_write = json.dumps(lexicon)
+with open (Lexicon, 'w') as L:
+    json.dump(lexicon, L)
+Index = r'C:\Users\wahaj\source\repos\DSA\DSA\Index.json'
+to_write = json.dumps(index)
+with open (Index, 'w') as I:
+    json.dump(index, I)
