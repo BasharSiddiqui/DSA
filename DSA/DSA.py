@@ -1,4 +1,4 @@
-from nltk import *
+from nltk import wordpunct_tokenize
 import json 
 import os
 from nltk.corpus import stopwords
