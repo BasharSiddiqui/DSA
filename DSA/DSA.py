@@ -2,7 +2,8 @@ import json
 import os
 from nltk import wordpunct_tokenize
 from nltk.corpus import stopwords
-from multiprocessing import Process, Pool
+from multiprocessing import Pool
+import threading
 Stopwords = stopwords.words("english")
 class ProcessFile:
     def __init__(myuwuobject, filename, directory, directory2):
@@ -45,9 +46,12 @@ if __name__ == '__main__':
     files = list(filename for filename in folder)
     objects = [] 
     procs = []
-    p = Pool(processes = 10)
-    for i in range(0,4): 
+    p = Pool()
+    for i in range(0,2): 
         objects.append(ProcessFile(folder[i], directory, directory2))
+        t = threading.Thread(target = ProcessFile.run, args = (objects[i],))
+        t.start()
+    print("hello")
     proc = p.map(ProcessFile.run, objects)
     for obj in objects:
         lexicon.update(obj.lexicon)
@@ -57,7 +61,6 @@ if __name__ == '__main__':
     to_write = json.dumps(lexicon)
     with open (Lexicon, 'w') as L:
         json.dump(lexicon, L)
-
     Index = r'C:\Users\wahaj\source\repos\DSA\DSA\Index.json'
     to_write = json.dumps(index)
     with open (Index, 'w') as I: 
