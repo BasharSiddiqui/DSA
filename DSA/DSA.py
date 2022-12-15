@@ -3,7 +3,6 @@ import os
 from nltk import wordpunct_tokenize
 from nltk.corpus import stopwords
 from multiprocessing import Pool
-import threading
 Stopwords = stopwords.words("english")
 class ProcessFile:
     def __init__(myuwuobject, filename, directory, directory2):
@@ -42,16 +41,11 @@ lexicon = set()
 index = {}
 # Create a thread for each file in the folder
 if __name__ == '__main__':
-
     files = list(filename for filename in folder)
     objects = [] 
-    procs = []
     p = Pool()
-    for i in range(0,2): 
+    for i in range(0,5): 
         objects.append(ProcessFile(folder[i], directory, directory2))
-        t = threading.Thread(target = ProcessFile.run, args = (objects[i],))
-        t.start()
-    print("hello")
     proc = p.map(ProcessFile.run, objects)
     for obj in objects:
         lexicon.update(obj.lexicon)
