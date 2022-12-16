@@ -3,7 +3,7 @@ import os
 from math import ceil
 from nltk import word_tokenize
 from nltk.corpus import stopwords
-from multiprocessing import Pool, cpu_count, Value
+from multiprocessing import Pool, cpu_count
 from nltk.stem import WordNetLemmatizer 
 lemmatizer = WordNetLemmatizer()
 Stopwords = stopwords.words("english")
@@ -13,7 +13,6 @@ directory2 =os.path.join(path, "Cleaned")
 folder2 = os.listdir(directory2)
 folder = os.listdir(directory)
 class ProcessFile:
-    counter = Value('i', 0, lock = True)
     def __init__(myuwuobject, filename, directory, directory2):
         myuwuobject.filename = filename
         myuwuobject.directory = directory
@@ -34,14 +33,11 @@ class ProcessFile:
                 # Add the words from the title and content fields to the lexicon
                 myuwuobject.lexicon.update(i["title"])
                 myuwuobject.lexicon.update(i["content"])
-                i["doc_id"] = ProcessFile.counter.value
-                ProcessFile.counter.value += 1
-                print(i["doc_id"])
                 for word in myuwuobject.lexicon:
                     if word in i["title"]:
-                        myuwuobject.inv_index[word] = myuwuobject.inv_index.get(word, []) + [i["doc_id"]]
+                        myuwuobject.inv_index[word] = myuwuobject.inv_index.get(word, []) + [i["id"]]
                     elif word in i["content"]:
-                        myuwuobject.inv_index[word] = myuwuobject.inv_index.get(word, []) + [i["doc_id"]]
+                        myuwuobject.inv_index[word] = myuwuobject.inv_index.get(word, []) + [i["id"]]
         F = os.path.join(myuwuobject.directory2, myuwuobject.filename)
         with open (F, 'w') as FiLe:
             json.dump(data, FiLe)
@@ -61,7 +57,7 @@ if __name__ == '__main__':
     for i in range(0,10): 
         objects.append(ProcessFile(folder[i], directory, directory2))
     chunk = ceil(len(objects)/workers)
-    proc = p.imap_unordered(ProcessFile.run, objects)
+    proc = p.imap_unordered(ProcessFile.run, objects, chunksize = chunk)
     for obj in proc:
         lexicon.update(obj.lexicon)
         inv_index.update(obj.inv_index)    
