@@ -8,6 +8,12 @@ from nltk.stem import WordNetLemmatizer
 lemmatizer = WordNetLemmatizer()
 Stopwords = stopwords.words("english")
 j = 0
+path = os.getcwd()
+directory = os.path.join(path, "Uncleaned")
+directory2 =os.path.join(path, "Cleaned")
+folder2 = os.listdir(directory2)
+folder = os.listdir(directory)
+
 class ProcessFile:
     def __init__(myuwuobject, filename, directory, directory2):
         super().__init__()
@@ -29,9 +35,9 @@ class ProcessFile:
                 i["doc_id"] = j
                 j=j+1
                 i["title"] = word_tokenize(i["title"])
-                i["title"] = [lemmatizer.lemmatize(x.lower()) for x in i["title"] if (x.isalnum() and lemmatizer.lemmatize(x.lower()) not in Stopwords)]
+                i["title"] = [lemmatizer.lemmatize(x.lower()) for x in i["title"] if (x.isalnum() and x not in Stopwords)]
                 i["content"] = word_tokenize(i["content"])
-                i["content"] = [lemmatizer.lemmatize(x.lower()) for x in i["content"] if (x.isalnum() and lemmatizer.lemmatize(x.lower()) not in Stopwords)]
+                i["content"] = [lemmatizer.lemmatize(x.lower()) for x in i["content"] if (x.isalnum() and x not in Stopwords)]
                 # Add the words from the title and content fields to the lexicon
                 myuwuobject.lexicon.update(i["title"])
                 myuwuobject.lexicon.update(i["content"])
@@ -43,33 +49,31 @@ class ProcessFile:
         F = os.path.join(myuwuobject.directory2, myuwuobject.filename)
         with open (F, 'w') as FiLe:
             json.dump(data, FiLe)
-
-directory = r'C:\Users\ahads\Documents\GitHub\DSA\DSA\New folder'
-directory2 = r'C:\Users\ahads\Documents\GitHub\DSA\DSA\New folder (2)'
-folder2 = os.listdir(directory2)
-folder = os.listdir(directory)
-with open(r'C:\Users\ahads\Documents\GitHub\DSA\DSA\Lexicon.json', 'r') as File:
-    lexicon = json.loads(File)
-lexicon = set(lexicon)
-with open(r'C:\Users\ahads\Documents\GitHub\DSA\DSA\Inv_index.json', 'r') as File:
-    inv_index = json.loads(File)
-# Create a thread for each file in the folder
+#Main
 if __name__ == '__main__':
-    files = list(filename for filename in folder)
+    with open(os.path.join(path, "Lexicon.json"), 'r') as File:
+        lexicon = json.load(File)
+    with open(os.path.join(path, "Inv_index.json"), 'r') as File:
+        inv_index = json.load(File)
+    lexicon = eval(lexicon)
+    lexicon = set(lexicon)
+    inv_index = eval(inv_index)
+    print(inv_index)
+    print(lexicon)
     objects = [] 
-    p = Pool()
-    for i in range(0,2): 
+    p = Pool(processes = 6)
+    
+    for i in range(0,4): 
         objects.append(ProcessFile(folder[i], directory, directory2))
     proc = p.map(ProcessFile.run, objects)
     for obj in objects:
         lexicon.update(obj.lexicon)
         inv_index.update(obj.inv_index)
-    Lexicon = r'C:\Users\ahads\Documents\GitHub\DSA\DSA\Lexicon.json'
+    
     lexicon = list(lexicon)
     to_write = json.dumps(lexicon)
-    with open (Lexicon, 'w') as L:
-        json.dump(lexicon, L)
-    Inv_index = r'C:\Users\ahads\Documents\GitHub\DSA\DSA\Inv_index.json'
+    with open (os.path.join(path, "Lexicon.json"), 'w') as L:
+        json.dump(to_write, L)
     to_write = json.dumps(inv_index)
-    with open (Inv_index, 'w') as I: 
-        json.dump(inv_index, I)
+    with open (os.path.join(path, "Inv_index.json"), 'w') as I: 
+        json.dump(to_write, I)
