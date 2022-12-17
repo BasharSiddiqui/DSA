@@ -10,9 +10,8 @@ Stopwords = stopwords.words("english")
 path = os.getcwd()
 directory = os.path.join(path, "Uncleaned")
 directory2 =os.path.join(path, "Cleaned")
-folder2 = os.listdir(directory2)
-
-folder = os.listdir(directory)    
+folder2 = [f for f in os.listdir(directory2) if f.endswith(".json")]
+folder = [f for f in os.listdir(directory) if f.endswith(".json")]
 class ProcessFile:
     def __init__(myuwuobject, filename, directory, directory2, index):
         myuwuobject.filename = filename
