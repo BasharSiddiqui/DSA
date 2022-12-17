@@ -68,6 +68,8 @@ if __name__ == '__main__':
         lexicon.update(p[0])
         inv_index.update(p[1])
     lexicon = list(lexicon)
+    inv_index = dict(sorted(inv_index.items()))
+    print(inv_index)
     to_write = json.dumps(lexicon)
     with open (os.path.join(path, "Lexicon.json"), 'w') as L:
         json.dump(to_write, L)
