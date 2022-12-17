@@ -20,6 +20,7 @@ class ProcessFile:
         myuwuobject.lexicon = set()
         myuwuobject.inv_index = {}
         myuwuobject.i = index
+        myuwuobject.for_index = {}
     def run(myuwuobject):
         j = 0
         if myuwuobject.filename in folder2:
@@ -69,7 +70,6 @@ if __name__ == '__main__':
         inv_index.update(p[1])
     lexicon = list(lexicon)
     inv_index = dict(sorted(inv_index.items()))
-    print(inv_index)
     to_write = json.dumps(lexicon)
     with open (os.path.join(path, "Lexicon.json"), 'w') as L:
         json.dump(to_write, L)
