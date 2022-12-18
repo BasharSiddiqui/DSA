@@ -16,6 +16,7 @@ class ProcessFile:
         myuwuobject.directory2 = directory2
         myuwuobject.lexicon = set()
         myuwuobject.inv_index = {}
+        myuwuobject.fwd_index = {}
 
     def run(myuwuobject):
         global folder2
@@ -26,6 +27,8 @@ class ProcessFile:
             data = json.load(File)
             for i in data:
                 global j
+                myuwuobject.fwd_index[i] = []
+                myuwuobject.fwd_index[i].append(j)
                 i["doc_id"] = j
                 j=j+1
                 i["title"] = word_tokenize(i["title"])
@@ -53,6 +56,8 @@ with open(r'C:\Users\ahads\Documents\GitHub\DSA\DSA\Lexicon.json', 'r') as File:
 lexicon = set(lexicon)
 with open(r'C:\Users\ahads\Documents\GitHub\DSA\DSA\Inv_index.json', 'r') as File:
     inv_index = json.loads(File)
+with open(r'C:\Users\ahads\Documents\GitHub\DSA\DSA\Fwd_index.json', 'r') as File:
+    fwd_index = json.loads(File)
 # Create a thread for each file in the folder
 if __name__ == '__main__':
     files = list(filename for filename in folder)
@@ -64,6 +69,7 @@ if __name__ == '__main__':
     for obj in objects:
         lexicon.update(obj.lexicon)
         inv_index.update(obj.inv_index)
+        fwd_index.update(obj.fwd_index)
     Lexicon = r'C:\Users\ahads\Documents\GitHub\DSA\DSA\Lexicon.json'
     lexicon = list(lexicon)
     to_write = json.dumps(lexicon)
@@ -73,3 +79,8 @@ if __name__ == '__main__':
     to_write = json.dumps(inv_index)
     with open (Inv_index, 'w') as I: 
         json.dump(inv_index, I)
+    Fwd_index = r'C:\Users\ahads\Documents\GitHub\DSA\DSA\Fwd_index.json'
+    to_write = json.dumps(fwd_index)
+    with open (Fwd_index, 'w') as I: 
+        json.dump(fwd_index, I)
+    #print(fwd_index)
