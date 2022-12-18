@@ -4,7 +4,7 @@ from math import ceil
 from nltk import wordpunct_tokenize, WordNetLemmatizer
 from nltk.corpus import stopwords
 from multiprocessing import Pool, cpu_count
-import time
+
 lemmatizer = WordNetLemmatizer()
 Stopwords = stopwords.words("english")
 path = os.getcwd()
@@ -49,7 +49,6 @@ class ProcessFile:
         return [myuwuobject.lexicon, myuwuobject.inv_index, myuwuobject.fwd_index]
 #Main
 if __name__ == '__main__':
-    begin = time.time()
     with open(os.path.join(path, "Lexicon.json"), 'r') as File:
         lexicon = json.load(File)
     with open(os.path.join(path, "Inv_index.json"), 'r') as File:
@@ -85,5 +84,3 @@ if __name__ == '__main__':
     to_write = json.dumps(fwd_index)
     with open (os.path.join(path, "Fwd_index.json"), 'w') as F: 
         json.dump(to_write, F)
-    end = time.time() 
-    print("Time: ", end-begin)
