@@ -1,4 +1,5 @@
 import json
+import datetime
 import os
 from math import ceil
 from nltk import wordpunct_tokenize, WordNetLemmatizer
@@ -18,10 +19,10 @@ class ProcessFile:
         myuwuobject.filename = filename
         myuwuobject.directory = directory
         myuwuobject.directory2 = directory2
-        myuwuobject.lexicon = set()
-        myuwuobject.inv_index = {}
+        myuwuobject.lexicon = []
+        myuwuobject.inv_index = []
         myuwuobject.i = index
-        myuwuobject.fwd_index = {}
+        myuwuobject.fwd_index = []
     def run(myuwuobject):
         j = 0
         if myuwuobject.filename in folder2:
@@ -29,7 +30,13 @@ class ProcessFile:
         f = os.path.join(myuwuobject.directory, myuwuobject.filename) 
         with open(f, 'r') as File:
             data = json.load(File)
-            for i in data:  
+            # x = 0  
+            for i in data:
+                lexx = set()
+                inv = {}
+                fwd = {}
+                # print(x)
+                # x+=1
                 i["doc_ID"] = str(myuwuobject.i) + "-" + str(j)
                 j += 1
                 i["title"] = wordpunct_tokenize(i["title"])
@@ -37,18 +44,20 @@ class ProcessFile:
                 i["content"] = wordpunct_tokenize(i["content"])
                 i["content"] = [lemmatizer.lemmatize(x.lower()) for x in i["content"] if (x.isalnum() and x.lower() not in Stopwords)]
                 # Add the words from the title and content fields to the lexicon
-                myuwuobject.fwd_index[i["doc_ID"]] = myuwuobject.fwd_index.get(i["doc_ID"], []) + sorted([word for word in i["content"]])
-                myuwuobject.lexicon.update(i["title"])
-                myuwuobject.lexicon.update(i["content"])
-                for word in myuwuobject.lexicon:
-                    if word in i["title"] or word in i["content"]:
-                        myuwuobject.inv_index[word] = myuwuobject.inv_index.get(word, []) + [i["doc_ID"]]   
+                fwd[i["doc_ID"]] =fwd.get(i["doc_ID"], []) + sorted([word for word in (i["title"]+i["content"])])
+                lexx.update(i["title"]+i["content"])
+                for word in lexx:
+                    inv[word] = inv.get(word, []) + [i["doc_ID"]]   
+                myuwuobject.lexicon.append(lexx)
+                myuwuobject.fwd_index.append(fwd)
+                myuwuobject.inv_index.append(inv)
         F = os.path.join(myuwuobject.directory2, myuwuobject.filename)
         with open (F, 'w') as FiLe:
             json.dump(data, FiLe)
         return [myuwuobject.lexicon, myuwuobject.inv_index, myuwuobject.fwd_index]
 #Main
 if __name__ == '__main__':
+    x1 = datetime.datetime.now()
     with open(os.path.join(path, "Lexicon.json"), 'r') as File:
         lexicon = json.load(File)
     with open(os.path.join(path, "Inv_index.json"), 'r') as File:
@@ -69,9 +78,13 @@ if __name__ == '__main__':
     chunk = ceil(len(objects)/workers)
     proc = p.imap_unordered(ProcessFile.run, objects, chunksize = chunk) 
     for p in proc: 
-        lexicon.update(p[0])
-        inv_index.update(p[1])
-        fwd_index.update(p[2])
+        for i in p[0]:
+            lexicon.update(i)
+        for i in p[1]:
+            for key,value in i.items():
+                inv_index[key] = inv_index.get(key, []) + value
+        for j in p[2]:
+            fwd_index.update(j)
     lexicon = list(lexicon)
     inv_index = dict(sorted(inv_index.items()))
     fwd_index = dict(sorted(fwd_index.items()))
@@ -84,3 +97,4 @@ if __name__ == '__main__':
     to_write = json.dumps(fwd_index)
     with open (os.path.join(path, "Fwd_index.json"), 'w') as F: 
         json.dump(to_write, F)
+    print(f"Time taken: {datetime.datetime.now() - x1}")
