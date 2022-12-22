@@ -11,7 +11,6 @@ Stopwords = stopwords.words("english")
 path = os.getcwd()
 directory = os.path.join(path, "Uncleaned")
 directory2 =os.path.join(path, "Cleaned")
-folder2 = [f for f in os.listdir(directory2) if f.endswith(".json")]
 folder = [f for f in os.listdir(directory) if f.endswith(".json")]
 
 class ProcessFile:
@@ -25,18 +24,13 @@ class ProcessFile:
         myuwuobject.fwd_index = []
     def run(myuwuobject):
         j = 0
-        if myuwuobject.filename in folder2:
-            return [myuwuobject.lexicon, myuwuobject.inv_index, myuwuobject.fwd_index]
         f = os.path.join(myuwuobject.directory, myuwuobject.filename) 
         with open(f, 'r') as File:
-            data = json.load(File)
-            # x = 0  
+            data = json.load(File) 
             for i in data:
                 lexx = set()
                 inv = {}
                 fwd = {}
-                # print(x)
-                # x+=1
                 i["doc_ID"] = str(myuwuobject.i) + "-" + str(j)
                 j += 1
                 i["title"] = wordpunct_tokenize(i["title"])
@@ -58,16 +52,9 @@ class ProcessFile:
 #Main
 if __name__ == '__main__':
     x1 = datetime.datetime.now()
-    with open(os.path.join(path, "Lexicon.json"), 'r') as File:
-        lexicon = json.load(File)
-    with open(os.path.join(path, "Inv_index.json"), 'r') as File:
-        inv_index = json.load(File)
-    with open(os.path.join(path, "Fwd_index.json"), 'r') as File:
-        fwd_index = json.load(File)
-    lexicon = eval(lexicon)
-    lexicon = set(lexicon)
-    inv_index = eval(inv_index)
-    fwd_index = eval(fwd_index)
+    lexicon = set()
+    inv_index = {}
+    fwd_index = {}
     objects = [] 
     workers = cpu_count()-1
     if workers == 0:
@@ -76,25 +63,24 @@ if __name__ == '__main__':
     for i in range(len(folder)): 
         objects.append(ProcessFile(folder[i], directory, directory2, i))
     chunk = ceil(len(objects)/workers)
-    proc = p.imap_unordered(ProcessFile.run, objects, chunksize = chunk) 
+    proc = p.imap_unordered(ProcessFile.run, objects, chunk)
+    p.close()
+    p.join()
     for p in proc: 
         for i in p[0]:
             lexicon.update(i)
-        for i in p[1]:
-            for key,value in i.items():
-                inv_index[key] = inv_index.get(key, []) + value
+        for i in p[1]: 
+            for key, value in i.items():
+                inv_index.setdefault(key, []).append(value[0])
         for j in p[2]:
             fwd_index.update(j)
-    lexicon = list(lexicon)
+    lexicon = list(sorted(lexicon))
     inv_index = dict(sorted(inv_index.items()))
     fwd_index = dict(sorted(fwd_index.items()))
-    to_write = json.dumps(lexicon)
     with open (os.path.join(path, "Lexicon.json"), 'w') as L:
-        json.dump(to_write, L)
-    to_write = json.dumps(inv_index)
+        json.dump(lexicon, L)
     with open (os.path.join(path, "Inv_index.json"), 'w') as I: 
-        json.dump(to_write, I)
-    to_write = json.dumps(fwd_index)
+        json.dump(inv_index, I)
     with open (os.path.join(path, "Fwd_index.json"), 'w') as F: 
-        json.dump(to_write, F)
+        json.dump(fwd_index, F)
     print(f"Time taken: {datetime.datetime.now() - x1}")
