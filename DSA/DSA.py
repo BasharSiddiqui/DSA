@@ -1,3 +1,4 @@
+#importing libraries
 import json
 import os
 from math import ceil
@@ -7,6 +8,8 @@ from multiprocessing import Pool, cpu_count
 from PyQt5 import QtWidgets
 import webbrowser
 from PySide2.QtCore import Qt
+import time
+#lemmatizing words
 lemmatizer = WordNetLemmatizer()
 Stopwords = stopwords.words("english")
 path = os.getcwd()
@@ -21,6 +24,7 @@ class ProcessFile:
         myuwuobject.inv_index = []
         myuwuobject.fwd_index = []
     def run(myuwuobject):
+        start_time = time.perf_counter()
         f = os.path.join(myuwuobject.directory, myuwuobject.filename)
         with open(f, 'r') as File:
             data = json.load(File)
@@ -41,9 +45,12 @@ class ProcessFile:
                 myuwuobject.lexicon.append(lexx)
                 myuwuobject.fwd_index.append(fwd)
                 myuwuobject.inv_index.append(inv)
+        end_time = time.perf_counter()
+        print(f"Indexing completed in {end_time - start_time:.2f} seconds")
         return [myuwuobject.lexicon, myuwuobject.inv_index, myuwuobject.fwd_index]
 
 def search(query, lexicon, inv_index, fwd_index):
+    start_time = time.perf_counter()
     # Tokenize and lemmatize the query
     query = wordpunct_tokenize(query)
     query = [lemmatizer.lemmatize(x.lower()) for x in query if (x.isalnum() and x.lower() not in Stopwords)]
@@ -89,13 +96,15 @@ def search(query, lexicon, inv_index, fwd_index):
     print(sorted_docs)
     # Return the top 30 documents
     sorted_docs = [doc[0][0] for doc in sorted_docs[:30]]
+    end_time = time.perf_counter()
+    print(f"Search completed in {end_time - start_time:.2f} seconds")
     return sorted_docs
 
 class SearchWindow(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.init_ui()
-
+#window for query in tkinter
     def init_ui(self):
         self.query_label = QtWidgets.QLabel("Enter query:", self)
         self.query_input = QtWidgets.QLineEdit(self)
