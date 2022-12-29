@@ -73,10 +73,13 @@ This method performs the following operations on the JSON file specified in the 
 
 ### The Search Function has the Following Parameters:
 
-•	query: a string representing the search query
-•	lexicon: the lexicon of a JSON file
-•	inv_index: the inverted index of a JSON file
-•	fwd_index: the forward index of a JSON file
+•	query: a string representing the search query.
+
+•	lexicon: the lexicon of a JSON file.
+
+•	inv_index: the inverted index of a JSON file.
+
+•	fwd_index: the forward index of a JSON file.
 
 It performs the following operations:
 
