@@ -10,6 +10,7 @@ import webbrowser
 from PySide2.QtCore import Qt
 import time
 #lemmatizing words
+
 lemmatizer = WordNetLemmatizer()
 Stopwords = stopwords.words("english")
 path = os.getcwd()
@@ -17,12 +18,14 @@ directory = os.path.join(path, "Uncleaned")
 folder = [f for f in os.listdir(directory) if f.endswith(".json")]
 
 class ProcessFile:
+    
     def __init__(myuwuobject, filename, directory):
         myuwuobject.filename = filename
         myuwuobject.directory = directory
         myuwuobject.lexicon = []
         myuwuobject.inv_index = []
         myuwuobject.fwd_index = []
+    
     def run(myuwuobject):
         start_time = time.perf_counter()
         f = os.path.join(myuwuobject.directory, myuwuobject.filename)
@@ -48,7 +51,8 @@ class ProcessFile:
         end_time = time.perf_counter()
         print(f"Indexing completed in {end_time - start_time:.2f} seconds")
         return [myuwuobject.lexicon, myuwuobject.inv_index, myuwuobject.fwd_index]
-#searching function
+
+#Searching function
 def search(query, lexicon, inv_index, fwd_index):
     start_time = time.perf_counter()
     # Tokenize and lemmatize the query
@@ -104,7 +108,7 @@ class SearchWindow(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.init_ui()
-#window for query in tkinter
+#Window for query in tkinter
     def init_ui(self):
         self.query_label = QtWidgets.QLabel("Enter query:", self)
         self.query_input = QtWidgets.QLineEdit(self)
@@ -124,7 +128,7 @@ class SearchWindow(QtWidgets.QWidget):
         self.results_list.itemDoubleClicked.connect(self.onDoubleClick)
         self.setWindowTitle("Search")
         self.setGeometry(300, 300, 300, 300)
-        #function to add a file
+        #Function to add a file
     def addfile(self):
         options = QtWidgets.QFileDialog.Options()
         options |= QtWidgets.QFileDialog.ReadOnly
