@@ -21,7 +21,6 @@ class ProcessFile:
         myuwuobject.inv_index = []
         myuwuobject.fwd_index = []
     def run(myuwuobject):
-        j = 0
         f = os.path.join(myuwuobject.directory, myuwuobject.filename)
         with open(f, 'r') as File:
             data = json.load(File)
@@ -103,19 +102,26 @@ class SearchWindow(QtWidgets.QWidget):
         self.search_button = QtWidgets.QPushButton("Search", self)
         self.results_label = QtWidgets.QLabel("Results:", self)
         self.results_list = QtWidgets.QListWidget(self)
-
+        self.addfile_button = QtWidgets.QPushButton("Add New File", self)
         layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.addfile_button)
         layout.addWidget(self.query_label)
         layout.addWidget(self.query_input)
         layout.addWidget(self.search_button)
         layout.addWidget(self.results_label)
         layout.addWidget(self.results_list)
-
+        self.addfile_button.clicked.connect(self.addfile)
         self.search_button.clicked.connect(self.on_search)
         self.results_list.itemDoubleClicked.connect(self.onDoubleClick)
         self.setWindowTitle("Search")
         self.setGeometry(300, 300, 300, 300)
-    
+    def addfile(self):
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.ReadOnly
+        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select File to Add", "", "All Files (*);;JSON Files (*.json)", options=options)
+        if file_name:
+            updateIndexes(file_name, lexicon, inv_index, fwd_index)
+        
     def setUrls(self, urls):
         # Clear the results list
         self.results_list.clear()    
@@ -138,6 +144,40 @@ class SearchWindow(QtWidgets.QWidget):
         # Open the URL in the default web browser
         webbrowser.open(url)        
 
+def updateIndexes(file, lexicon, inv_index, fwd_index):
+    lexicon = set(lexicon)
+    lex = []
+    Inv = []
+    Fwd = []
+    f = os.path.join(directory, file)
+    with open(f, 'r') as File:
+        data = json.load(File)
+        for i in data:
+            lexx = set()
+            inv = {}
+            fwd = {}
+            i["title"] = wordpunct_tokenize(i["title"])
+            i["title"] = [lemmatizer.lemmatize(x.lower()) for x in i["title"] if (x.isalnum() and x.lower() not in Stopwords)]
+            i["content"] = wordpunct_tokenize(i["content"])
+            i["content"] = [lemmatizer.lemmatize(x.lower()) for x in i["content"] if (x.isalnum() and x.lower() not in Stopwords)]
+            # Add the words from the title and content fields to the lexicon
+            fwd[i["url"]] = fwd.get(i["url"], []) + sorted([word for word in (i["title"]+i["content"])])
+            lexx.update(i["title"]+i["content"])
+            for word in lexx:
+                is_in_title = word in i["title"]
+                inv[word] = inv.get(word, []) + [(i["url"], (i["title"]+i["content"]).count(word), is_in_title)]
+            lex.append(lexx)
+            Fwd.append(fwd)
+            Inv.append(inv)
+    for i in lex:
+        lexicon.update(i)   
+    for i in Inv:
+        for key, value in i.items():
+            # Modify the inv_index to store a list of lists containing the document ID, number of hits and importance check
+            inv_index.setdefault(key, []).extend(value)
+    for i in Fwd:
+        fwd_index.update(i) 
+    lexicon = list(lexicon)
 #Main
 if __name__ == '__main__':
     
@@ -152,6 +192,8 @@ if __name__ == '__main__':
     for i in range(len(folder)):
         objects.append(ProcessFile(folder[i], directory))
     chunk = ceil(len(objects)/workers)
+    if chunk == 0:
+        chunk = 1
     proc = p.imap_unordered(ProcessFile.run, objects, chunk)
     p.close()
     p.join()
@@ -160,14 +202,13 @@ if __name__ == '__main__':
             lexicon.update(i)
         for i in p[1]:
             for key, value in i.items():
-                # Modify the inv_index to store a list of tuples containing the document ID and the number of hits
+                # Modify the inv_index to store a list of lists containing the document ID, number of hits and importance check
                 inv_index.setdefault(key, []).extend(value)
         for j in p[2]:
             fwd_index.update(j)
     lexicon = list(sorted(lexicon))
     inv_index = dict(sorted(inv_index.items()))
     fwd_index = dict(sorted(fwd_index.items()))
-    
     app = QtWidgets.QApplication([])
     window = SearchWindow()
     window.show()
