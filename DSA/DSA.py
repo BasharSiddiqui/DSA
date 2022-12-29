@@ -92,17 +92,20 @@ def search(query, lexicon, inv_index, fwd_index):
         words |= set(word_list)
 
     # Sort the documents by the number of hits for the most important word in the query
-    sorted_docs = sorted(docs, key=lambda doc_id: inv_index[sorted_query[0]][doc_id[1]], reverse=True)
-    
-    # Modify the ranking of the documents based on the number of query words they contain
-    sorted_docs = [(doc, len(set(fwd_index[doc[0]]) & set(query))) for doc in sorted_docs]
-    sorted_docs = sorted(sorted_docs, key=lambda qcount: qcount[1], reverse=True)
-    print(sorted_docs)
-    # Return the top 30 documents
-    sorted_docs = [doc[0][0] for doc in sorted_docs[:30]]
-    end_time = time.perf_counter()
-    print(f"Search completed in {end_time - start_time:.2f} seconds")
-    return sorted_docs
+    try:
+        sorted_docs = sorted(docs, key=lambda doc_id: inv_index[sorted_query[0]][doc_id[1]], reverse=True)
+        
+        # Modify the ranking of the documents based on the number of query words they contain
+        sorted_docs = [(doc, len(set(fwd_index[doc[0]]) & set(query))) for doc in sorted_docs]
+        sorted_docs = sorted(sorted_docs, key=lambda qcount: qcount[1], reverse=True)
+        print(sorted_docs)
+        # Return the top 30 documents
+        sorted_docs = [doc[0][0] for doc in sorted_docs[:30]]
+        end_time = time.perf_counter()
+        print(f"Search completed in {end_time - start_time:.2f} seconds")
+        return sorted_docs
+    except: 
+        return []
 
 class SearchWindow(QtWidgets.QWidget):
     def __init__(self):
