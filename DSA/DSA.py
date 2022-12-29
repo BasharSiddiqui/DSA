@@ -30,6 +30,7 @@ class ProcessFile:
                 lexx = set()
                 inv = {}
                 fwd = {}
+                #lemmatizing while checking if its alphanumeric and not a stopword
                 i["title"] = wordpunct_tokenize(i["title"])
                 i["title"] = [lemmatizer.lemmatize(x.lower()) for x in i["title"] if (x.isalnum() and x.lower() not in Stopwords)]
                 i["content"] = wordpunct_tokenize(i["content"])
@@ -40,6 +41,7 @@ class ProcessFile:
                 for word in lexx:
                     is_in_title = word in i["title"]
                     inv[word] = inv.get(word, []) + [(i["url"], (i["title"]+i["content"]).count(word), is_in_title)]
+                #updating forwarded and inverted articles 
                 myuwuobject.lexicon.append(lexx)
                 myuwuobject.fwd_index.append(fwd)
                 myuwuobject.inv_index.append(inv)
