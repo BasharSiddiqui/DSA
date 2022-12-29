@@ -87,8 +87,8 @@ def search(query, lexicon, inv_index, fwd_index):
     sorted_docs = [(doc, len(set(fwd_index[doc[0]]) & set(query))) for doc in sorted_docs]
     sorted_docs = sorted(sorted_docs, key=lambda qcount: qcount[1], reverse=True)
     print(sorted_docs)
-    # Return the top 20 documents
-    sorted_docs = [doc[0][0] for doc in sorted_docs[:20]]
+    # Return the top 30 documents
+    sorted_docs = [doc[0][0] for doc in sorted_docs[:30]]
     return sorted_docs
 
 class SearchWindow(QtWidgets.QWidget):
@@ -115,6 +115,7 @@ class SearchWindow(QtWidgets.QWidget):
         self.results_list.itemDoubleClicked.connect(self.onDoubleClick)
         self.setWindowTitle("Search")
         self.setGeometry(300, 300, 300, 300)
+        
     def addfile(self):
         options = QtWidgets.QFileDialog.Options()
         options |= QtWidgets.QFileDialog.ReadOnly
@@ -134,7 +135,7 @@ class SearchWindow(QtWidgets.QWidget):
     def on_search(self):
         # Get the query from the input field
         query = self.query_input.text()
-        # Search for the query and get the top 20 results
+        # Search for the query and get the top 30 results
         results = search(query, lexicon, inv_index, fwd_index)
         self.setUrls(results)
 
@@ -173,7 +174,7 @@ def updateIndexes(file, lexicon, inv_index, fwd_index):
         lexicon.update(i)   
     for i in Inv:
         for key, value in i.items():
-            # Modify the inv_index to store a list of lists containing the document ID, number of hits and importance check
+            # Modify the inv_index to store a list of lists containing the document link, number of hits and importance check
             inv_index.setdefault(key, []).extend(value)
     for i in Fwd:
         fwd_index.update(i) 
