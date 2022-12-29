@@ -140,7 +140,7 @@ class SearchWindow(QtWidgets.QWidget):
         # Clear the results list
         self.results_list.clear()    
         # Add the URLs to the list widget
-        for url in urls:
+        for url in set(urls):
             item = QtWidgets.QListWidgetItem(url)
             item.setData(Qt.UserRole, url)
             self.results_list.addItem(item)
