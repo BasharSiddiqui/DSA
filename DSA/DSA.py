@@ -1,86 +1,175 @@
 import json
-import datetime
 import os
 from math import ceil
 from nltk import wordpunct_tokenize, WordNetLemmatizer
 from nltk.corpus import stopwords
 from multiprocessing import Pool, cpu_count
-
+from PyQt5 import QtWidgets
+import webbrowser
+from PySide2.QtCore import Qt
 lemmatizer = WordNetLemmatizer()
 Stopwords = stopwords.words("english")
 path = os.getcwd()
 directory = os.path.join(path, "Uncleaned")
-directory2 =os.path.join(path, "Cleaned")
 folder = [f for f in os.listdir(directory) if f.endswith(".json")]
 
 class ProcessFile:
-    def __init__(myuwuobject, filename, directory, directory2, index):
+    def __init__(myuwuobject, filename, directory):
         myuwuobject.filename = filename
         myuwuobject.directory = directory
-        myuwuobject.directory2 = directory2
         myuwuobject.lexicon = []
         myuwuobject.inv_index = []
-        myuwuobject.i = index
         myuwuobject.fwd_index = []
     def run(myuwuobject):
         j = 0
-        f = os.path.join(myuwuobject.directory, myuwuobject.filename) 
+        f = os.path.join(myuwuobject.directory, myuwuobject.filename)
         with open(f, 'r') as File:
-            data = json.load(File) 
+            data = json.load(File)
             for i in data:
                 lexx = set()
                 inv = {}
                 fwd = {}
-                i["doc_ID"] = str(myuwuobject.i) + "-" + str(j)
-                j += 1
                 i["title"] = wordpunct_tokenize(i["title"])
                 i["title"] = [lemmatizer.lemmatize(x.lower()) for x in i["title"] if (x.isalnum() and x.lower() not in Stopwords)]
                 i["content"] = wordpunct_tokenize(i["content"])
                 i["content"] = [lemmatizer.lemmatize(x.lower()) for x in i["content"] if (x.isalnum() and x.lower() not in Stopwords)]
                 # Add the words from the title and content fields to the lexicon
-                fwd[i["doc_ID"]] =fwd.get(i["doc_ID"], []) + sorted([word for word in (i["title"]+i["content"])])
+                fwd[i["url"]] = fwd.get(i["url"], []) + sorted([word for word in (i["title"]+i["content"])])
                 lexx.update(i["title"]+i["content"])
                 for word in lexx:
-                    inv[word] = inv.get(word, []) + [i["doc_ID"]]   
+                    is_in_title = word in i["title"]
+                    inv[word] = inv.get(word, []) + [(i["url"], (i["title"]+i["content"]).count(word), is_in_title)]
                 myuwuobject.lexicon.append(lexx)
                 myuwuobject.fwd_index.append(fwd)
                 myuwuobject.inv_index.append(inv)
-        F = os.path.join(myuwuobject.directory2, myuwuobject.filename)
-        with open (F, 'w') as FiLe:
-            json.dump(data, FiLe)
         return [myuwuobject.lexicon, myuwuobject.inv_index, myuwuobject.fwd_index]
+
+def search(query, lexicon, inv_index, fwd_index):
+    # Tokenize and lemmatize the query
+    query = wordpunct_tokenize(query)
+    query = [lemmatizer.lemmatize(x.lower()) for x in query if (x.isalnum() and x.lower() not in Stopwords)]
+    for word in query:
+        if (word not in lexicon):
+            query.remove(word)
+    if (len(query)==0):
+        return []
+    # Get the lists of document IDs and hit counts for each word in the query from the inverted index
+    doc_hit_lists = [inv_index[word] for word in query]
+
+    # Find the intersection of the lists to get the IDs of the documents that contain any of the words in the query
+    docs = set()
+    for doc_hit_list in doc_hit_lists:
+        docs |= set(doc_hit_list)
+
+    # Calculate the importance of each word in the query
+    word_importance = {}
+    for word in query:
+        word_importance[word] = 0
+        for doc_hit in doc_hit_lists:
+            for doc, hit, is_in_title in doc_hit:
+                if doc in docs:
+                    word_importance[word] += hit * (2 if is_in_title else 1)
+
+    # Sort the words in the query by importance
+    sorted_query = sorted(query, key=lambda word: word_importance[word], reverse=True)
+
+    # Get the lists of words for each document from the forward index
+    word_lists = [fwd_index[doc_id[0]] for doc_id in docs]
+
+    # Find the intersection of the lists to get the words that are common to all the documents
+    words = set()
+    for word_list in word_lists:
+        words |= set(word_list)
+
+    # Sort the documents by the number of hits for the most important word in the query
+    sorted_docs = sorted(docs, key=lambda doc_id: inv_index[sorted_query[0]][doc_id[1]], reverse=True)
+    
+    # Modify the ranking of the documents based on the number of query words they contain
+    sorted_docs = [(doc, len(set(fwd_index[doc[0]]) & set(query))) for doc in sorted_docs]
+    sorted_docs = sorted(sorted_docs, key=lambda qcount: qcount[1], reverse=True)
+    print(sorted_docs)
+    # Return the top 20 documents
+    sorted_docs = [doc[0][0] for doc in sorted_docs[:20]]
+    return sorted_docs
+
+class SearchWindow(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
+        self.init_ui()
+
+    def init_ui(self):
+        self.query_label = QtWidgets.QLabel("Enter query:", self)
+        self.query_input = QtWidgets.QLineEdit(self)
+        self.search_button = QtWidgets.QPushButton("Search", self)
+        self.results_label = QtWidgets.QLabel("Results:", self)
+        self.results_list = QtWidgets.QListWidget(self)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.query_label)
+        layout.addWidget(self.query_input)
+        layout.addWidget(self.search_button)
+        layout.addWidget(self.results_label)
+        layout.addWidget(self.results_list)
+
+        self.search_button.clicked.connect(self.on_search)
+        self.results_list.itemDoubleClicked.connect(self.onDoubleClick)
+        self.setWindowTitle("Search")
+        self.setGeometry(300, 300, 300, 300)
+    
+    def setUrls(self, urls):
+        # Clear the results list
+        self.results_list.clear()    
+        # Add the URLs to the list widget
+        for url in urls:
+            item = QtWidgets.QListWidgetItem(url)
+            item.setData(Qt.UserRole, url)
+            self.results_list.addItem(item)
+
+    def on_search(self):
+        # Get the query from the input field
+        query = self.query_input.text()
+        # Search for the query and get the top 20 results
+        results = search(query, lexicon, inv_index, fwd_index)
+        self.setUrls(results)
+
+    def onDoubleClick(self, item):
+        # Get the URL from the item
+        url = item.data(Qt.UserRole)
+        # Open the URL in the default web browser
+        webbrowser.open(url)        
+
 #Main
 if __name__ == '__main__':
-    x1 = datetime.datetime.now()
+    
     lexicon = set()
     inv_index = {}
     fwd_index = {}
-    objects = [] 
+    objects = []
     workers = cpu_count()-1
     if workers == 0:
         workers = 1
     p = Pool(workers)
-    for i in range(len(folder)): 
-        objects.append(ProcessFile(folder[i], directory, directory2, i))
+    for i in range(len(folder)):
+        objects.append(ProcessFile(folder[i], directory))
     chunk = ceil(len(objects)/workers)
     proc = p.imap_unordered(ProcessFile.run, objects, chunk)
     p.close()
     p.join()
-    for p in proc: 
+    for p in proc:
         for i in p[0]:
             lexicon.update(i)
-        for i in p[1]: 
+        for i in p[1]:
             for key, value in i.items():
-                inv_index.setdefault(key, []).append(value[0])
+                # Modify the inv_index to store a list of tuples containing the document ID and the number of hits
+                inv_index.setdefault(key, []).extend(value)
         for j in p[2]:
             fwd_index.update(j)
     lexicon = list(sorted(lexicon))
     inv_index = dict(sorted(inv_index.items()))
     fwd_index = dict(sorted(fwd_index.items()))
-    with open (os.path.join(path, "Lexicon.json"), 'w') as L:
-        json.dump(lexicon, L)
-    with open (os.path.join(path, "Inv_index.json"), 'w') as I: 
-        json.dump(inv_index, I)
-    with open (os.path.join(path, "Fwd_index.json"), 'w') as F: 
-        json.dump(fwd_index, F)
-    print(f"Time taken: {datetime.datetime.now() - x1}")
+    
+    app = QtWidgets.QApplication([])
+    window = SearchWindow()
+    window.show()
+    app.exec_()
+    
