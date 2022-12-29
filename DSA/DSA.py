@@ -124,7 +124,7 @@ class SearchWindow(QtWidgets.QWidget):
         self.results_list.itemDoubleClicked.connect(self.onDoubleClick)
         self.setWindowTitle("Search")
         self.setGeometry(300, 300, 300, 300)
-        
+        #function to add a file
     def addfile(self):
         options = QtWidgets.QFileDialog.Options()
         options |= QtWidgets.QFileDialog.ReadOnly
