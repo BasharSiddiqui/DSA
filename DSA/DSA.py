@@ -97,7 +97,7 @@ class SearchWindow(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.init_ui()
-
+#window for query in tkinter
     def init_ui(self):
         self.query_label = QtWidgets.QLabel("Enter query:", self)
         self.query_input = QtWidgets.QLineEdit(self)
