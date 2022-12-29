@@ -13,6 +13,8 @@ path = os.getcwd()
 directory = os.path.join(path, "Uncleaned")
 folder = [f for f in os.listdir(directory) if f.endswith(".json")]
 
+
+#forwarded and inverted indexing
 class ProcessFile:
     def __init__(myuwuobject, filename, directory):
         myuwuobject.filename = filename
