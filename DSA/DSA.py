@@ -1,3 +1,4 @@
+#importing libraries
 import json
 import os
 from math import ceil
@@ -7,6 +8,7 @@ from multiprocessing import Pool, cpu_count
 from PyQt5 import QtWidgets
 import webbrowser
 from PySide2.QtCore import Qt
+#lemmatizing words
 lemmatizer = WordNetLemmatizer()
 Stopwords = stopwords.words("english")
 path = os.getcwd()
