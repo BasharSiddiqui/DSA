@@ -211,3 +211,99 @@ if __name__ == '__main__':
     window.show()
     app.exec_()
     
+
+    """  
+       
+    def setUrls(self, urls):
+        # Clear the results list
+        self.results_list.clear()    
+        # Add the URLs to the list widget
+        for url in urls:
+            item = QtWidgets.QListWidgetItem(url)
+            item.setData(Qt.UserRole, url)
+            self.results_list.addItem(item)
+
+    def on_search(self):
+        # Get the query from the input field
+        query = self.query_input.text()
+        # Search for the query and get the top 20 results
+        results = search(query, lexicon, inv_index, fwd_index)
+        self.setUrls(results)
+
+    def onDoubleClick(self, item):
+        # Get the URL from the item
+        url = item.data(Qt.UserRole)
+        # Open the URL in the default web browser
+        webbrowser.open(url)        
+
+def updateIndexes(file, lexicon, inv_index, fwd_index):
+    lex = []
+    Inv = []
+    Fwd = []
+    f = os.path.join(directory, file)
+    with open(f, 'r') as File:
+        data = json.load(File)
+        for i in data:
+            lexx = set()
+            inv = {}
+            fwd = {}
+            i["title"] = wordpunct_tokenize(i["title"])
+            i["title"] = [lemmatizer.lemmatize(x.lower()) for x in i["title"] if (x.isalnum() and x.lower() not in Stopwords)]
+            i["content"] = wordpunct_tokenize(i["content"])
+            i["content"] = [lemmatizer.lemmatize(x.lower()) for x in i["content"] if (x.isalnum() and x.lower() not in Stopwords)]
+            # Add the words from the title and content fields to the lexicon
+            fwd[i["url"]] = fwd.get(i["url"], []) + sorted([word for word in (i["title"]+i["content"])])
+            lexx.update(i["title"]+i["content"])
+            for word in lexx:
+                is_in_title = word in i["title"]
+                inv[word] = inv.get(word, []) + [(i["url"], (i["title"]+i["content"]).count(word), is_in_title)]
+            lex.append(lexx)
+            Fwd.append(fwd)
+            Inv.append(inv)
+    for i in lex:
+        lexicon.update(i)   
+    for i in Inv:
+        for key, value in i.items():
+            # Modify the inv_index to store a list of lists containing the document ID, number of hits and importance check
+            inv_index.setdefault(key, []).extend(value)
+    for i in Fwd:
+        fwd_index.update(j) 
+#Main
+if __name__ == '__main__':
+    
+    lexicon = set()
+    inv_index = {}
+    fwd_index = {}
+    objects = []
+    workers = cpu_count()-1
+    if workers == 0:
+        workers = 1
+    p = Pool(workers)
+    for i in range(len(folder)):
+        objects.append(ProcessFile(folder[i], directory))
+    chunk = ceil(len(objects)/workers)
+    if chunk == 0:
+        chunk = 1
+    proc = p.imap_unordered(ProcessFile.run, objects, chunk)
+    p.close()
+    p.join()
+    for p in proc:
+        for i in p[0]:
+            lexicon.update(i)
+        for i in p[1]:
+            for key, value in i.items():
+                # Modify the inv_index to store a list of lists containing the document ID, number of hits and importance check
+                inv_index.setdefault(key, []).extend(value)
+        for j in p[2]:
+            fwd_index.update(j)
+    lexicon = list(sorted(lexicon))
+    inv_index = dict(sorted(inv_index.items()))
+    fwd_index = dict(sorted(fwd_index.items()))
+    
+    app = QtWidgets.QApplication([])
+    window = SearchWindow()
+    window.show()
+    app.exec_()
+
+      
+    """
