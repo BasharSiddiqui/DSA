@@ -48,7 +48,7 @@ class ProcessFile:
         end_time = time.perf_counter()
         print(f"Indexing completed in {end_time - start_time:.2f} seconds")
         return [myuwuobject.lexicon, myuwuobject.inv_index, myuwuobject.fwd_index]
-
+#searching function
 def search(query, lexicon, inv_index, fwd_index):
     start_time = time.perf_counter()
     # Tokenize and lemmatize the query
